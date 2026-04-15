@@ -31,8 +31,8 @@
     "vite": "^6.2.0"
   },
   "build": {
-    "appId": "com.zyelixify.peertopeerdicomviewer",
-    "productName": "PeerToPeerDicomViewer",
+    "appId": "com.zyelixify.dicomviewerp2p",
+    "productName": "DicomViewerP2P",
     "directories": {
       "output": "release"
     },
