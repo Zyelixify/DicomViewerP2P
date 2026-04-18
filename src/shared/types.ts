@@ -258,17 +258,17 @@ export type EvaluationSessionSummary = {
     connect: number
   }
   receiveMetrics: {
-    avgTTFI: number | null
+    avgTTFIMs: number | null
     avgStudyAvailableMs: number | null
-    avgTransferDuration: number | null
-    avgTransportThroughput: number | null
+    avgTransferDurationMs: number | null
+    avgTransportThroughputMbps: number | null
     avgFirstReviewAvailabilityPercent: number | null
     avgWaitAfterFirstReviewMs: number | null
     avgCompletenessPercent: number | null
   }
   sendMetrics: {
-    avgTransferDuration: number | null
-    avgTransportThroughput: number | null
+    avgTransferDurationMs: number | null
+    avgTransportThroughputMbps: number | null
     avgCompletenessPercent: number | null
     totalBytesTransferred: number
   }

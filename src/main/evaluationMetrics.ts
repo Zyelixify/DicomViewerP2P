@@ -326,11 +326,10 @@ function buildStudyMetricsRecord(accumulator: StudyMetricsAccumulator): StudyMet
   const firstImageRenderedAtMs = accumulator.timestamps.firstImageRenderedAtMs
   const transferCompletedAtMs = accumulator.timestamps.transferCompletedAtMs
   const transferFailedAtMs = accumulator.timestamps.transferFailedAtMs
-  const terminalTransferAtMs = transferCompletedAtMs ?? transferFailedAtMs
 
   // Design rule: retain unique metrics; remove only redundant timing measures.
   const ttfIMs = toPositiveDuration(studySelectedAtMs, firstImageRenderedAtMs)
-  const transferDurationMs = toPositiveDuration(transferStartedAtMs, terminalTransferAtMs)
+  const transferDurationMs = toPositiveDuration(transferStartedAtMs, transferCompletedAtMs)
   const studyAvailableMs = toPositiveDuration(transferStartedAtMs, studyVisibleAtMs)
 
   const totalStudyInstanceCount = accumulator.totalStudyInstanceCount ?? accumulator.lastKnownExpectedInstanceCount
@@ -513,10 +512,10 @@ function buildSessionSummaryFromStudies(studies: StudyMetricsRecord[]): Evaluati
     outcomeCounts,
     failureCounts,
     receiveMetrics: {
-      avgTTFI: average(pickNumbers(receiveStudies.map((study) => study.ttfIMs))),
+      avgTTFIMs: average(pickNumbers(receiveStudies.map((study) => study.ttfIMs))),
       avgStudyAvailableMs: average(pickNumbers(receiveStudies.map((study) => study.studyAvailableMs))),
-      avgTransferDuration: average(pickNumbers(receiveStudies.map((study) => study.transferDurationMs))),
-      avgTransportThroughput: average(pickNumbers(receiveStudies.map((study) => study.transportThroughputMbps))),
+      avgTransferDurationMs: average(pickNumbers(receiveStudies.map((study) => study.transferDurationMs))),
+      avgTransportThroughputMbps: average(pickNumbers(receiveStudies.map((study) => study.transportThroughputMbps))),
       avgFirstReviewAvailabilityPercent: average(
         pickNumbers(receiveStudies.map((study) => study.firstReviewAvailabilityPercent))
       ),
@@ -524,8 +523,8 @@ function buildSessionSummaryFromStudies(studies: StudyMetricsRecord[]): Evaluati
       avgCompletenessPercent: average(pickNumbers(receiveStudies.map((study) => study.completenessPercent)))
     },
     sendMetrics: {
-      avgTransferDuration: average(pickNumbers(sendStudies.map((study) => study.transferDurationMs))),
-      avgTransportThroughput: average(pickNumbers(sendStudies.map((study) => study.transportThroughputMbps))),
+      avgTransferDurationMs: average(pickNumbers(sendStudies.map((study) => study.transferDurationMs))),
+      avgTransportThroughputMbps: average(pickNumbers(sendStudies.map((study) => study.transportThroughputMbps))),
       avgCompletenessPercent: average(pickNumbers(sendStudies.map((study) => study.completenessPercent))),
       totalBytesTransferred: sendStudies.reduce(
         (total, study) => total + (typeof study.transferBytesTotal === 'number' ? study.transferBytesTotal : 0),
