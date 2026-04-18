@@ -36,11 +36,8 @@ type StudyMetricsAccumulator = {
   lastKnownAvailableInstanceCount?: number
   lastKnownExpectedInstanceCount?: number
   timestamps: {
-    scanCompletedAtMs?: number
-    offerAcceptedAtMs?: number
     transferStartedAtMs?: number
     studyVisibleAtMs?: number
-    firstOpenableSeriesAtMs?: number
     studySelectedAtMs?: number
     firstImageRenderedAtMs?: number
     transferCompletedAtMs?: number
@@ -224,6 +221,7 @@ function updateStudyMetricsAccumulator(payload: EvaluationEventPayload, eventTim
   }
 
   if (typeof payload.confidenceScore === 'number') {
+    // Keep the raw numeric feedback and the domain-facing adequacy label together on export.
     accumulator.confidenceScore = payload.confidenceScore
     accumulator.adequacyForTask = payload.confidenceScore >= 0.5 ? 'adequate' : 'inadequate'
   }
@@ -238,12 +236,6 @@ function updateStudyMetricsAccumulator(payload: EvaluationEventPayload, eventTim
     }
   }
 
-  if (typeof payload.elapsedMs === 'number' && payload.elapsedMs >= 0) {
-    if (payload.workflowMode === 'local' && payload.eventType === 'scan_completed') {
-      accumulator.timestamps.scanCompletedAtMs = eventTimestampMs - payload.elapsedMs
-    }
-  }
-
   const detailsTotalBytes = toNumber(details?.totalBytes)
   if (typeof detailsTotalBytes === 'number') {
     accumulator.totalBytes = detailsTotalBytes
@@ -251,20 +243,12 @@ function updateStudyMetricsAccumulator(payload: EvaluationEventPayload, eventTim
 
   applyAvailabilityDetails(accumulator, payload)
 
-  if (payload.eventType === 'offer_accepted') {
-    accumulator.timestamps.offerAcceptedAtMs = eventTimestampMs
-  }
-
   if (payload.eventType === 'transfer_started') {
     accumulator.timestamps.transferStartedAtMs = accumulator.timestamps.transferStartedAtMs ?? eventTimestampMs
   }
 
   if (payload.eventType === 'study_visible') {
     accumulator.timestamps.studyVisibleAtMs = accumulator.timestamps.studyVisibleAtMs ?? eventTimestampMs
-  }
-
-  if (payload.eventType === 'first_openable_series_available') {
-    accumulator.timestamps.firstOpenableSeriesAtMs = accumulator.timestamps.firstOpenableSeriesAtMs ?? eventTimestampMs
   }
 
   if (payload.eventType === 'study_selected') {
@@ -336,22 +320,18 @@ function shouldFinalizeStudy(accumulator: StudyMetricsAccumulator) {
 }
 
 function buildStudyMetricsRecord(accumulator: StudyMetricsAccumulator): StudyMetricsRecord {
-  const scanCompletedAtMs = accumulator.timestamps.scanCompletedAtMs
-  const offerAcceptedAtMs = accumulator.timestamps.offerAcceptedAtMs
   const transferStartedAtMs = accumulator.timestamps.transferStartedAtMs
   const studyVisibleAtMs = accumulator.timestamps.studyVisibleAtMs
-  const firstOpenableSeriesAtMs = accumulator.timestamps.firstOpenableSeriesAtMs
   const studySelectedAtMs = accumulator.timestamps.studySelectedAtMs
   const firstImageRenderedAtMs = accumulator.timestamps.firstImageRenderedAtMs
   const transferCompletedAtMs = accumulator.timestamps.transferCompletedAtMs
   const transferFailedAtMs = accumulator.timestamps.transferFailedAtMs
   const terminalTransferAtMs = transferCompletedAtMs ?? transferFailedAtMs
 
+  // Design rule: retain unique metrics; remove only redundant timing measures.
   const ttfIMs = toPositiveDuration(studySelectedAtMs, firstImageRenderedAtMs)
   const transferDurationMs = toPositiveDuration(transferStartedAtMs, terminalTransferAtMs)
   const studyAvailableMs = toPositiveDuration(transferStartedAtMs, studyVisibleAtMs)
-  const receiveEndToEndMs = toPositiveDuration(offerAcceptedAtMs, firstImageRenderedAtMs)
-  const firstOpenableSeriesMs = toPositiveDuration(transferStartedAtMs, firstOpenableSeriesAtMs)
 
   const totalStudyInstanceCount = accumulator.totalStudyInstanceCount ?? accumulator.lastKnownExpectedInstanceCount
   let receivedInstanceCount = accumulator.receivedInstanceCount ?? accumulator.lastKnownAvailableInstanceCount
@@ -439,8 +419,6 @@ function buildStudyMetricsRecord(accumulator: StudyMetricsAccumulator): StudyMet
     ttfIMs,
     transferDurationMs,
     studyAvailableMs,
-    receiveEndToEndMs,
-    firstOpenableSeriesMs,
     firstReviewAvailabilityPercent: accumulator.firstReviewAvailabilityPercent,
     reviewStartedBeforeTransferComplete,
     waitAfterFirstReviewMs,
@@ -457,10 +435,8 @@ function buildStudyMetricsRecord(accumulator: StudyMetricsAccumulator): StudyMet
     failureType: accumulator.failureType
   }
 
-  if (accumulator.workflowMode === 'local' && typeof scanCompletedAtMs !== 'number') {
+  if (accumulator.workflowMode === 'local') {
     delete record.studyAvailableMs
-    delete record.receiveEndToEndMs
-    delete record.firstOpenableSeriesMs
     delete record.reviewStartedBeforeTransferComplete
     delete record.waitAfterFirstReviewMs
     delete record.receivedInstanceCount
@@ -538,8 +514,7 @@ function buildSessionSummaryFromStudies(studies: StudyMetricsRecord[]): Evaluati
     failureCounts,
     receiveMetrics: {
       avgTTFI: average(pickNumbers(receiveStudies.map((study) => study.ttfIMs))),
-      avgStudyVisibleMs: average(pickNumbers(receiveStudies.map((study) => study.studyAvailableMs))),
-      avgFirstOpenableSeriesMs: average(pickNumbers(receiveStudies.map((study) => study.firstOpenableSeriesMs))),
+      avgStudyAvailableMs: average(pickNumbers(receiveStudies.map((study) => study.studyAvailableMs))),
       avgTransferDuration: average(pickNumbers(receiveStudies.map((study) => study.transferDurationMs))),
       avgTransportThroughput: average(pickNumbers(receiveStudies.map((study) => study.transportThroughputMbps))),
       avgFirstReviewAvailabilityPercent: average(

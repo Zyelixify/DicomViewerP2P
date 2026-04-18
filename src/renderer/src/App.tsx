@@ -99,8 +99,8 @@ export function App() {
   const acceptingOfferIdsRef = useRef<Set<string>>(new Set())
   const dismissedOfferIdsRef = useRef<Set<string>>(new Set())
   const lastHandledTerminalOfferRef = useRef<string>('')
-  const earlyReceiveAvailabilityOfferIdsRef = useRef<Set<string>>(new Set())
-  const firstOpenableSeriesOfferIdsRef = useRef<Set<string>>(new Set())
+  const studyVisibleOfferIdsRef = useRef<Set<string>>(new Set())
+  const reviewReadyOfferIdsRef = useRef<Set<string>>(new Set())
   const droppedMetricEventsRef = useRef(0)
   const progressiveViewerRefreshTimerRef = useRef<number | null>(null)
   const evaluationReadinessRefreshTimerRef = useRef<number | null>(null)
@@ -527,8 +527,8 @@ export function App() {
       ...previous,
       p2p_receive: null
     }))
-    earlyReceiveAvailabilityOfferIdsRef.current.clear()
-    firstOpenableSeriesOfferIdsRef.current.clear()
+    studyVisibleOfferIdsRef.current.clear()
+    reviewReadyOfferIdsRef.current.clear()
     lastHandledTerminalOfferRef.current = ''
     acceptingOfferIdsRef.current.clear()
     dismissedOfferIdsRef.current.clear()
@@ -555,8 +555,8 @@ export function App() {
       acceptedOfferIdsRef.current.clear()
       acceptingOfferIdsRef.current.clear()
       dismissedOfferIdsRef.current.clear()
-      earlyReceiveAvailabilityOfferIdsRef.current.clear()
-      firstOpenableSeriesOfferIdsRef.current.clear()
+      studyVisibleOfferIdsRef.current.clear()
+      reviewReadyOfferIdsRef.current.clear()
       bumpReceiveOfferQueueVersion()
       setStudyContexts((previous) => ({
         ...previous,
@@ -579,8 +579,8 @@ export function App() {
       setReceivedScanResult(null)
       acceptedOfferIdsRef.current.clear()
       acceptingOfferIdsRef.current.clear()
-      earlyReceiveAvailabilityOfferIdsRef.current.clear()
-      firstOpenableSeriesOfferIdsRef.current.clear()
+      studyVisibleOfferIdsRef.current.clear()
+      reviewReadyOfferIdsRef.current.clear()
       bumpReceiveOfferQueueVersion()
       setReceiveStatusMessage('Received cache cleared')
     } catch (error) {
@@ -658,7 +658,7 @@ export function App() {
     }
 
     const offerId = pendingReceiveOffer.offerId
-    earlyReceiveAvailabilityOfferIdsRef.current.delete(offerId)
+    studyVisibleOfferIdsRef.current.delete(offerId)
     acceptingOfferIdsRef.current.add(offerId)
     bumpReceiveOfferQueueVersion()
     setPeerError(null)
@@ -683,7 +683,7 @@ export function App() {
       return
     }
 
-    if (!earlyReceiveAvailabilityOfferIdsRef.current.has(activeReceiveOfferId)) {
+    if (!studyVisibleOfferIdsRef.current.has(activeReceiveOfferId)) {
       logEvaluationEvent({
         eventType: 'study_visible',
         workflowMode: 'p2p_receive',
@@ -694,14 +694,14 @@ export function App() {
           expectedInstanceCount: activeReceiveOfferSummary.expectedInstanceCount
         }
       })
-      earlyReceiveAvailabilityOfferIdsRef.current.add(activeReceiveOfferId)
+      studyVisibleOfferIdsRef.current.add(activeReceiveOfferId)
     }
 
     if (!activeReceiveOfferSummary.hasOpenableSeries) {
       return
     }
 
-    const hasAlreadyAnnouncedOpenableSeries = firstOpenableSeriesOfferIdsRef.current.has(activeReceiveOfferId)
+    const hasAlreadyAnnouncedOpenableSeries = reviewReadyOfferIdsRef.current.has(activeReceiveOfferId)
 
     if (!hasAlreadyAnnouncedOpenableSeries) {
       setReceiveStatusMessage('First files received. You can review while transfer continues.')
@@ -717,17 +717,7 @@ export function App() {
         setScreen('series')
       }
 
-      firstOpenableSeriesOfferIdsRef.current.add(activeReceiveOfferId)
-      logEvaluationEvent({
-        eventType: 'first_openable_series_available',
-        workflowMode: 'p2p_receive',
-        studyId: studyContexts.p2p_receive.studyId,
-        details: {
-          offerId: activeReceiveOfferId,
-          availableInstanceCount: activeReceiveOfferSummary.availableInstanceCount,
-          expectedInstanceCount: activeReceiveOfferSummary.expectedInstanceCount
-        }
-      })
+      reviewReadyOfferIdsRef.current.add(activeReceiveOfferId)
     }
   }, [
     activeReceiveOfferId,

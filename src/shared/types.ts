@@ -191,8 +191,6 @@ export interface StudyMetricsRecord {
   ttfIMs?: number
   transferDurationMs?: number
   studyAvailableMs?: number
-  receiveEndToEndMs?: number
-  firstOpenableSeriesMs?: number
   firstReviewAvailabilityPercent?: number
   reviewStartedBeforeTransferComplete?: boolean
   waitAfterFirstReviewMs?: number
@@ -261,8 +259,7 @@ export type EvaluationSessionSummary = {
   }
   receiveMetrics: {
     avgTTFI: number | null
-    avgStudyVisibleMs: number | null
-    avgFirstOpenableSeriesMs: number | null
+    avgStudyAvailableMs: number | null
     avgTransferDuration: number | null
     avgTransportThroughput: number | null
     avgFirstReviewAvailabilityPercent: number | null
