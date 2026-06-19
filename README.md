@@ -38,8 +38,8 @@ The application also includes a built-in evaluation framework that logs interact
 ### Research Evaluation Metrics
 - All user interactions and system events are logged and timestamped for later analysis
 - Per-study metrics computed automatically:
-  - **TTFIM** — time from transfer start to first image rendered
-  - Transfer duration and throughput (MB/s)
+  - **TTFIM** — time from study selection to first image rendered
+  - Transfer duration and throughput (Mbps)
   - Study completeness percentage
   - Reviewer confidence/adequacy feedback
 - Full session summary exportable as JSON

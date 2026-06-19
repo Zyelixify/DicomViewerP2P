@@ -1003,7 +1003,6 @@ export function App() {
       <header className="app-header">
         <div>
           <h1>Peer-to-Peer DICOM Viewer</h1>
-          <p className="screen-subtitle">Peer-to-peer DICOM viewing and sharing</p>
         </div>
         <div className="app-header-actions">
           {canFinishEvaluation ? (
